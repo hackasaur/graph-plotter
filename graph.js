@@ -1,8 +1,8 @@
 let canvas = document.getElementById("myCanvas");
 if (canvas.getContext) {
     const ctx = canvas.getContext('2d')
-    ctx.canvas.width = window.innerWidth / 2;
-    ctx.canvas.height = window.innerHeight / 1.3;
+    ctx.canvas.width = Math.floor(window.innerWidth / 2);
+    ctx.canvas.height = Math.floor(window.innerHeight / 1.5)
 
     const createPoint = (x, y) => {
         let point = new Int8Array(2)
@@ -10,15 +10,37 @@ if (canvas.getContext) {
         return point
     }
 
-    let origin = createPoint(canvas.width / 2, canvas.height / 2)
-    let unit = 10
+    const setCanvasFont = (ctx, font) => {
+        ctx.fillStyle = `${font.fontColor}`
+        ctx.font = `${font.fontSize}px ${font.fontStyle}`
+    }
 
-    const cartesianToCanvasCoordinates = (coords, originInCanvas, unitPixels) => {
+    const getFontHeight = (ctx) => {
+        return ctx.measureText('O').fontBoundingBoxAscent
+    }
+
+    const getCharacterWidth = (ctx, character) => {
+        return ctx.measureText(character).width
+    }
+
+    const printOnCanvas = (ctx, text, coords, font) => {
+        setCanvasFont(ctx, font)
+        ctx.fillText(text, coords[0], coords[1])
+    }
+
+    let origin = createPoint(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2))
+    let unit = 40
+
+    const cartesianToCanvasCoords = (coords, originInCanvas, unitPixels) => {
         return createPoint(originInCanvas[0] + unitPixels * coords[0], originInCanvas[1] - unitPixels * coords[1])
     }
 
+    const canvasToCartestianCoords = (coords, originInCanvas, unitPixels) => {
+        return createPoint((coords[0] - originInCanvas[0]) / unitPixels, (originInCanvas[1] - coords[1]) / unitPixels)
+    }
+
     function f(x) {
-        return x * x;
+        return x ** 2;
     }
 
     const curve = (ctx, startX, endX, lineWidth, originInCanvas, unitPixels) => {
@@ -26,19 +48,17 @@ if (canvas.getContext) {
             draw: () => {
                 //make lines that trace coordinates of the function in an interval
                 let dx = 1 / unitPixels
-                console.log(dx)
+                // console.log(dx)
                 ctx.strokeStyle = "white"
                 ctx.lineWidth = lineWidth
                 ctx.lineJoin = 'round'
-                let startPoint = cartesianToCanvasCoordinates(createPoint(startX, f(startX)), originInCanvas, unitPixels)
-                console.log('startPoint:', startPoint)
+                let startPoint = cartesianToCanvasCoords(createPoint(startX, f(startX)), originInCanvas, unitPixels)
+                // console.log('startPoint:', startPoint)
                 ctx.beginPath()
                 ctx.moveTo(startPoint[0], startPoint[1])
                 for (let x = startX; x <= endX; x += dx) {
-                    console.log(x)
-                    // let nextPoint = cartesianToCanvasCoordinates(createPoint(x + dx, f(x + dx)), originInCanvas, unit)
                     let nextPoint = createPoint(startPoint[0] + 1, originInCanvas[1] - unitPixels * f(x + dx))
-                    console.log('nextPoint:', nextPoint)
+                    // console.log(x, f(x + dx))
                     ctx.lineTo(nextPoint[0], nextPoint[1])
                     startPoint = nextPoint
                 }
@@ -48,13 +68,14 @@ if (canvas.getContext) {
     }
 
     const axis = (ctx, axisLength, originInCanvas, unit) => {
-        topPoint = cartesianToCanvasCoordinates(createPoint(0, axisLength), originInCanvas, unit)
-        bottomPoint = cartesianToCanvasCoordinates(createPoint(0, -axisLength), originInCanvas, unit)
-        leftPoint = cartesianToCanvasCoordinates(createPoint(-axisLength, 0), originInCanvas, unit)
-        rightPoint = cartesianToCanvasCoordinates(createPoint(axisLength, 0), originInCanvas, unit)
+        topPoint = cartesianToCanvasCoords(createPoint(0, axisLength), originInCanvas, unit)
+        bottomPoint = cartesianToCanvasCoords(createPoint(0, -axisLength), originInCanvas, unit)
+        leftPoint = cartesianToCanvasCoords(createPoint(-axisLength, 0), originInCanvas, unit)
+        rightPoint = cartesianToCanvasCoords(createPoint(axisLength, 0), originInCanvas, unit)
+        console.log(topPoint, bottomPoint, leftPoint, rightPoint)
         return {
             draw: () => {
-                ctx.strokeStyle = "#000000"
+                ctx.strokeStyle = "purple"
                 ctx.lineWidth = 1
                 //y axis
                 ctx.beginPath()
@@ -71,9 +92,27 @@ if (canvas.getContext) {
     }
 
     let theAxis = axis(ctx, 20, origin, unit)
-    let theCurve = curve(ctx, -5, 5, 2, origin, unit)
-    theAxis.draw()
-    theCurve.draw()
+    let theCurve = curve(ctx, -3, 3, 2, origin, unit)
+    renderGraph(theAxis, theCurve)
+
+
+
+    canvas.addEventListener('mousemove', (event) => {
+        renderGraph(theAxis, theCurve)
+        let mouseCoords = createPoint(event.x - canvas.offsetLeft, event.y - canvas.offsetTop)
+        let mouseCoordsInCartesian = canvasToCartestianCoords(mouseCoords, origin, unit)
+ 
+        printOnCanvas(ctx,
+            `x:${mouseCoordsInCartesian[0]},y:${mouseCoordsInCartesian[1]}`,
+            mouseCoords,
+            { fontStyle: 'Fira Mono', fontColor: 'grey', fontSize: '20' })
+    })
+
+    function renderGraph(axis, curve) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        axis.draw()
+        curve.draw()
+    }
 
     let frameNumber = 0
 
