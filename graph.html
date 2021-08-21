@@ -5,12 +5,17 @@
 	<meta charset="utf-8" />
 </head>
 
-<body style="background-color: rgb(75, 2, 75);">
-	<form id = 'equation'>
-		y = <input type="text" id="f of x" value="x^2"><br>
-	</form>
-	<canvas id="myCanvas" style="border:1px solid #d3d3d3;">your browser doesn't support HTML5
-		canvas tag</canvas>
+<body onLoad='draw();' style="background-color: rgb(75, 2, 75);color:white;font-size: 1.5em;font-family: 'serif';">
+	<div>
+			y = <input type="text" id="f of x" value='x**2'>
+			<button id = 'submit equation'>submit</button>
+			<p id ='error'></p>
+	</div>
+	<div><button id = 'zoom in'>+</button><button id = 'zoom out'>-</button></div>
+	<br>
+	<div>
+		<canvas id="myCanvas" style="border:2px solid #ffa703; border-radius: 10px;">your browser doesn't support HTML5 canvas tag</canvas>
+	</div>
 </body>
 
 <script src='graph.js'></script>
