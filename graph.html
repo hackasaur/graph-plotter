@@ -5,16 +5,17 @@
 	<meta charset="utf-8" />
 </head>
 
-<body onLoad='draw();' style="background-color: rgb(75, 2, 75);color:white;font-size: 1.5em;font-family: 'serif';">
+<body onLoad='draw();' style="background-color: rgb(75, 2, 75);color:white;">
 	<div>
-			y = <input type="text" id="f of x" value='x**2'>
-			<button id = 'submit equation'>submit</button>
-			<p id ='error'></p>
+		<span style="font-family: 'DejaVu Serif','serif';">f(x) =</span><input type="text" id="f of x" value='x**2'>
+		<button id='submit equation'>submit</button>
+		<p id='error'></p>
 	</div>
-	<div><button id = 'zoom in'>+</button><button id = 'zoom out'>-</button></div>
+	<div><button id='zoom in'>+</button><button id='zoom out'>-</button></div>
 	<br>
 	<div>
-		<canvas id="myCanvas" style="border:2px solid #ffa703; border-radius: 10px;">your browser doesn't support HTML5 canvas tag</canvas>
+		<canvas id="myCanvas" style="border:2px solid #ffa703; border-radius: 10px;">your browser doesn't support HTML5
+			canvas tag</canvas>
 	</div>
 </body>
 

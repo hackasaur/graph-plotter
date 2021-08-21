@@ -2,10 +2,8 @@ let canvas = document.getElementById("myCanvas");
 function draw() {
     if (canvas.getContext) {
         const ctx = canvas.getContext('2d')
-        ctx.canvas.width = Math.floor(window.innerWidth / 2)
-        ctx.canvas.height = Math.floor(window.innerHeight / 1.5)
-        // ctx.canvas.width = Math.floor(window.innerWidth / 2);
-        // ctx.canvas.height = Math.floor(window.innerHeight / 1.5)
+        ctx.canvas.width = Math.floor(window.innerWidth / 1.5)
+        ctx.canvas.height = Math.floor(window.innerHeight / 1.2)
 
         const createPoint = (x, y) => {
             let point = new Int8Array(2)
@@ -66,68 +64,98 @@ function draw() {
             return createPoint((coords[0] - originInCanvas[0]) / unitPixels, (originInCanvas[1] - coords[1]) / unitPixels)
         }
 
-        const curve = (ctx, fOfX, startX, endX, lineWidth, originInCanvas, unitPixels) => {
+        const curve = (ctx, fOfX, lineWidth, originInCanvas, unitPixels, axisLength, startX = 'default', endX = 'default') => {
+            if (unitPixels <= 0) {
+                throw 'unitPixels cannot be <= 0'
+            }
+
             const properties = { fOfX: fOfX, startX: startX, endX: endX, lineWidth: lineWidth, originInCanvas: originInCanvas, unitPixels: unitPixels }
 
+            if (startX === 'default') {
+                properties.startX = Math.ceil(-axisLength / properties.unitPixels + 1)
+            }
+            if (endX === 'default') {
+                properties.endX = Math.floor(axisLength / properties.unitPixels - 1)
+            }
+
+            console.log(properties.startX, properties.endX)
             return {
                 draw: () => {
+                    if (properties.unitPixels <= 0) {
+                        throw 'unitPixels cannot be <= 0'
+                    }
                     //make lines that trace coordinates of the function in an interval
                     let dx = 1 / properties.unitPixels
-                    // console.log(dx)
                     ctx.strokeStyle = "white"
                     ctx.lineWidth = lineWidth
                     ctx.lineJoin = 'round'
-                    let startPoint = cartesianToCanvasCoords(createPoint(startX, properties.fOfX(startX)), properties.originInCanvas, properties.unitPixels)
-                    // console.log('startPoint:', startPoint)
+                    let startPoint = cartesianToCanvasCoords(createPoint(properties.startX, properties.fOfX(properties.startX)), properties.originInCanvas, properties.unitPixels)
                     ctx.beginPath()
                     let canvasX = startPoint[0]
                     let canvasY = startPoint[1]
                     ctx.moveTo(canvasX, canvasY)
-                    for (let x = startX; x <= endX - dx; x += dx) {
+                    for (let x = properties.startX; x <= properties.endX - dx; x += dx) {
                         canvasX = canvasX + 1
                         canvasY = properties.originInCanvas[1] - properties.unitPixels * properties.fOfX(x + dx)
-                        ctx.lineTo(canvasX, canvasY)
+                        if (canvasX < canvas.width && canvasY < canvas.height) {
+                            ctx.lineTo(canvasX, canvasY)
+                        }
+                        else {
+                            ctx.moveTo(canvasX, canvasY)
+                        }
                     }
                     ctx.stroke()
                 },
                 getProperties: () => {
                     return properties
                 }
-
             }
         }
 
         const axis = (ctx, axisLength, originInCanvas, unitPixels) => {
-            const properties = { axisLength: axisLength, originInCanvas: originInCanvas, unitPixels: unitPixels }
-            let topPoint = cartesianToCanvasCoords(createPoint(0, properties.axisLength), properties.originInCanvas, properties.unitPixels)
-            let bottomPoint = cartesianToCanvasCoords(createPoint(0, -properties.axisLength), properties.originInCanvas, properties.unitPixels)
-            let leftPoint = cartesianToCanvasCoords(createPoint(-properties.axisLength, 0), properties.originInCanvas, properties.unitPixels)
-            let rightPoint = cartesianToCanvasCoords(createPoint(properties.axisLength, 0), properties.originInCanvas, properties.unitPixels)
-
-            console.log(topPoint, bottomPoint, leftPoint, rightPoint)
+            const properties = { axisLength: axisLength, originInCanvas: originInCanvas, unitPixels: unitPixels, hatchMarkLength: 5, hatchMarkGap: 1 }
+            if (unitPixels <= 0) {
+                throw 'unitPixels cannot be <= 0'
+            }
             return {
                 draw: () => {
+                    if (properties.unitPixels <= 0) {
+                        throw 'unitPixels cannot be <= 0'
+                    }
                     ctx.strokeStyle = "purple"
                     ctx.lineWidth = 1
                     //y axis
                     ctx.beginPath()
-                    ctx.moveTo(topPoint[0], topPoint[1])
-                    ctx.lineTo(bottomPoint[0], bottomPoint[1])
-                    ctx.stroke();
+                    ctx.moveTo(originInCanvas[0], originInCanvas[1] - properties.axisLength)
+                    ctx.lineTo(originInCanvas[0], originInCanvas[1] + properties.axisLength)
                     //x axis
+                    ctx.moveTo(originInCanvas[0] - properties.axisLength, originInCanvas[1])
+                    ctx.lineTo(originInCanvas[0] + properties.axisLength, originInCanvas[1])
+                    ctx.stroke()
+                    let originX = properties.originInCanvas[0]
+                    let originY = properties.originInCanvas[1]
+
                     ctx.beginPath()
-                    ctx.moveTo(leftPoint[0], leftPoint[1])
-                    ctx.lineTo(rightPoint[0], rightPoint[1])
+                    numberOfHatchMarks = Math.floor(properties.axisLength / properties.unitPixels)
+                    for (let hatchMarkIndex = 0; hatchMarkIndex <= numberOfHatchMarks; hatchMarkIndex++) {
+                        let hatchMarkOffset = hatchMarkIndex * properties.unitPixels
+                        ctx.moveTo(originX + hatchMarkOffset, originY - properties.hatchMarkLength)
+                        ctx.lineTo(originX + hatchMarkOffset, originY + properties.hatchMarkLength)
+                        ctx.moveTo(originX - hatchMarkOffset, originY - properties.hatchMarkLength)
+                        ctx.lineTo(originX - hatchMarkOffset, originY + properties.hatchMarkLength)
+                    }
+                    //hatchMarks for y axis
+                    for (let hatchMarkIndex = 0; hatchMarkIndex <= numberOfHatchMarks; hatchMarkIndex++) {
+                        let hatchMarkOffset = hatchMarkIndex * properties.unitPixels
+                        ctx.moveTo(originX + properties.hatchMarkLength, originY + hatchMarkOffset)
+                        ctx.lineTo(originX - properties.hatchMarkLength, originY + hatchMarkOffset)
+                        ctx.moveTo(originX + properties.hatchMarkLength, originY - hatchMarkOffset)
+                        ctx.lineTo(originX - properties.hatchMarkLength, originY - hatchMarkOffset)
+                    }
                     ctx.stroke()
                 },
                 getProperties: () => {
                     return properties
-                },
-                updateAxis: () => {
-                    topPoint = cartesianToCanvasCoords(createPoint(0, properties.axisLength), properties.originInCanvas, properties.unitPixels)
-                    bottomPoint = cartesianToCanvasCoords(createPoint(0, -properties.axisLength), properties.originInCanvas, properties.unitPixels)
-                    leftPoint = cartesianToCanvasCoords(createPoint(-properties.axisLength, 0), properties.originInCanvas, properties.unitPixels)
-                    rightPoint = cartesianToCanvasCoords(createPoint(properties.axisLength, 0), properties.originInCanvas, properties.unitPixels)
                 }
             }
         }
@@ -144,7 +172,9 @@ function draw() {
 
         let origin = createPoint(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2))
         let unit = 40
+        let axisLength = Math.floor(canvas.height / 2) - 5
         let allowedCharacters = ['x', '+', '-', '*', '/']
+        let zoomRate = 5
         for (let i = 0; i < 10; i++) {
             allowedCharacters.push(`${i}`)
         }
@@ -152,29 +182,35 @@ function draw() {
         let fOfX_string = document.getElementById('f of x').value
         let fOfX = returnFOfX(fOfX_string, allowedCharacters)
 
-        let theAxis = axis(ctx, 20, origin, unit)
-        theAxisProps = theAxis.getProperties()
-        let theCurve = curve(ctx, fOfX, -3, 3, 2, origin, unit)
-        theCurveProps = theCurve.getProperties()
+        let theAxis = axis(ctx, axisLength, origin, unit)
+        let theAxisProps = theAxis.getProperties()
+        let theCurve = curve(ctx, fOfX, 2, origin, unit, axisLength)
+        let theCurveProps = theCurve.getProperties()
         let mouseCoordsInCartesian = createPoint(0, -10)
         let mouseCoords = createPoint(0, -10)
 
         renderGraph(theAxis, theCurve)
 
         document.getElementById('zoom in').addEventListener('click', () => {
-            unit += 5
+            if (unit <= axisLength - zoomRate) {
+                unit += zoomRate
+            }
+            console.log(unit)
             theCurveProps.unitPixels = unit
             theAxisProps.unitPixels = unit
         })
 
-
         document.getElementById('zoom out').addEventListener('click', () => {
-            unit -= 5
+            if (unit > zoomRate) {
+                unit -= zoomRate
+            }
+            console.log(unit)
             theCurveProps.unitPixels = unit
             theAxisProps.unitPixels = unit
         })
 
         document.getElementById('submit equation').addEventListener('click', () => {
+            document.getElementById('error').innerText = ''
             fOfX_string = document.getElementById('f of x').value
             fOfX = returnFOfX(fOfX_string, allowedCharacters)
             theCurveProps.fOfX = fOfX
@@ -184,7 +220,6 @@ function draw() {
             mouseCoords = createPoint(event.x - canvas.offsetLeft, event.y - canvas.offsetTop)
             mouseCoordsInCartesian = canvasToCartestianCoords(mouseCoords, origin, unit)
         })
-
 
         let frameNumber = 0
 
