@@ -1,9 +1,12 @@
 let canvas = document.getElementById("myCanvas");
+
 function draw() {
     if (canvas.getContext) {
         const ctx = canvas.getContext('2d')
-        ctx.canvas.width = Math.floor(window.innerWidth / 1.5)
-        ctx.canvas.height = Math.floor(window.innerHeight / 1.2)
+        // ctx.canvas.width = Math.floor(window.innerWidth / 2)
+        // ctx.canvas.height = Math.floor(window.innerHeight / 2)
+        ctx.canvas.width = 600
+        ctx.canvas.height = 600
 
         const isPointInsideRect = (coords, x1, y1, x2, y2) => {
             if (coords[0] > x1 && coords[0] < x2) {
@@ -14,8 +17,7 @@ function draw() {
         }
 
         const createPoint = (x, y) => {
-            let point = new Int8Array(2)
-            point = [x, y]
+            let point = [x, y]
             return point
         }
 
@@ -24,24 +26,20 @@ function draw() {
             ctx.font = `${font.fontSize}px ${font.fontStyle}`
         }
 
-        const getFontHeight = (ctx) => {
-            return ctx.measureText('O').fontBoundingBoxAscent
-        }
-
-        const getCharacterWidth = (ctx, character) => {
-            return ctx.measureText(character).width
-        }
-
         const printOnCanvas = (ctx, text, coords, font) => {
             setCanvasFont(ctx, font)
             ctx.fillText(text, coords[0], coords[1])
         }
 
         const checkEquation = (fOfX_string, characters) => {
+            // check that the expression for fOfX doesn't contain characters other than +, -, *, /, (,), 0-9 and x but exception is Math.some_function()
+            //TODO: add character list inside the function
             for (let i = 0; i < fOfX_string.length; i++) {
                 if (characters.includes(fOfX_string[i])) {
                     continue
                 }
+
+                //TODO: write a better parser for Math.some_function()
                 else if (fOfX_string[i] === 'M') {
                     if (fOfX_string.slice(i, i + 5) === 'Math.') {
                         let p = i + 5
@@ -66,7 +64,7 @@ function draw() {
             return true
         }
 
-        const returnFOfX = (fOfX_string, allowedCharacters) => {
+        export const returnFOfX = (fOfX_string, allowedCharacters) => {
             if (checkEquation(fOfX_string, allowedCharacters)) {
                 try {
                     return Function('x', `return ${fOfX_string}`)
@@ -228,14 +226,15 @@ function draw() {
             if (mouseCoords !== undefined) {
                 let mouseCoordsInCartesian = canvasToCartestianCoords(mouseCoords, origin, scale)
                 let y = fOfX(mouseCoordsInCartesian[0])
-                ctx.fillStyle = 'blue'
+                ctx.fillStyle = 'cyan'
                 ctx.beginPath()
                 ctx.arc(mouseCoords[0], origin[1] - scale * y, 3, 0, 2 * Math.PI)
                 ctx.fill()
+                let padding = 10
                 printOnCanvas(ctx,
-                    `x:${Math.round(mouseCoordsInCartesian[0] * 100) / 100}, y:${Math.round((y) * 100) / 100}`,
-                    createPoint(mouseCoords[0], origin[1] - scale * y),
-                    { fontStyle: 'Fira Mono', fontColor: 'grey', fontSize: '20' })
+                    `x:${mouseCoordsInCartesian[0].toFixed(2)}, y:${y.toFixed(2)}`,
+                    createPoint(mouseCoords[0] + padding, origin[1] - scale * y),
+                    { fontStyle: 'Fira Mono', fontColor: 'grey', fontSize: '12' })
             }
         }
 
@@ -282,8 +281,9 @@ function draw() {
             console.log(scale)
             theCurveProps.scale = scale
             theAxisProps.scale = scale
-            theAxis.update()
             theCurve.update()
+            theAxis.update()
+            renderGraph(theAxis, theCurve)
         })
 
         document.getElementById('submit equation').addEventListener('click', () => {
@@ -303,45 +303,16 @@ function draw() {
             }
         })
 
-    function main() {
-        requestAnimationFrame(main)
-        if (mouseMoved === true && mouseInside === true) {
-            renderGraph(theAxis, theCurve, mouseCoords)
-            mouseMoved = false
-            mouseInside = false
-        }
-    }
-    main()
-
-    function animateCurve(curve) {
-        let curvePointsArray = curve.getPointsArray()
-        console.log(curvePointsArray)
-        let index = 0
-        let chunk = 5
-        ctx.strokeStyle = "white"
-        ctx.lineWidth = 2
-        ctx.lineJoin = 'round'
-        ctx.beginPath()
-        ctx.moveTo(curvePointsArray[0][0], curvePointsArray[0][1])
-
-        function loop() {
-            for (let i = 1; i <= chunk; i++) {
-                ctx.lineTo(curvePointsArray[index + i][0], curvePointsArray[index + i][1])
-            }
-            ctx.stroke()
-            if (curvePointsArray.length - index > chunk) {
-                index += chunk
-            }
-            else {
-                index += 1
-                chunk = curvePointsArray.length - index
-            }
-
-            if (index <= curvePointsArray.length) {
-                window.requestAnimationFrame(loop)
+        function main() {
+            requestAnimationFrame(main)
+            if (mouseMoved === true && mouseInside === true) {
+                renderGraph(theAxis, theCurve, mouseCoords)
+                mouseMoved = false
+                mouseInside = false
             }
         }
-        loop()
+        main()
     }
 }
-}
+
+

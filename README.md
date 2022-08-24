@@ -1,5 +1,13 @@
-# graph-plotter
-plot any function of 𝑥 on a 𝑥𝑦 plane. zoom in/out and check the coordinates.
-to use common math functions like sin(𝑥), add `Math.` in front, so it should be Math.sin(𝑥). why? because i'm too lazy to write a parser to convert to a Javascript function. 
+# Graph-plotter
+Plot any function of $x$ on a $xy$ plane, zoom in/out and check the coordinates.  
+To use common math functions like $sin(x)$, add `Math.` in front of the function e.g. `Math.sin(x)`   
 
-![screenshot graph-plotter tan(x)](https://github.com/hackasaur/graph-plotter/blob/master/graph-plotter_tan(x).png)
+
+![screenshot graph-plotter tan(x)](https://github.com/hackasaur/graph-plotter/blob/master/graph plot.gif)
+
+TODO:
+- [x] plot multiple plots on the same graph
+- [ ] zoom in/out using mouse scroll wheel
+- [ ] pan the graph
+- [ ] checkEquation should have a better parser for `Math.<functions>`. `Math.` should not have to be added
+- [ ] handle asymptotes as moveTo() joins the plot in that case. Same with non-continous functions
